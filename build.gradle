@@ -1,0 +1,89 @@
+import com.github.spotbugs.SpotBugsTask
+
+buildscript {
+    ext.springRepo = 'http://repo.spring.io/libs-release'
+    ext {
+        springBootVersion = '2.0.3.RELEASE'
+        dockerPluginVersion = '0.19.2'
+        spotBugsVersion = '1.6.1'
+        ksoichiroVersion = '0.2.0'
+    }
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        maven { url springRepo }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("gradle.plugin.com.palantir.gradle.docker:gradle-docker:${dockerPluginVersion}")
+        classpath("gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:${spotBugsVersion}")        
+    }
+}
+
+group = "com.pcl.web.product"
+
+def vJavaLang = '1.8'
+
+def javaProjects = [
+		project(':core'),
+        project(':store')
+]
+
+def bootProjects = [
+        project(':store')
+]
+
+wrapper.gradleVersion = 4.7
+
+configure(javaProjects) {
+    repositories {
+        mavenLocal()
+        maven { url springRepo }
+        maven {
+            url 'https://repo.spring.io/libs-milestone'
+        }
+        mavenCentral()
+        maven {url "https://artifacts.alfresco.com/nexus/content/repositories/public/"}	
+    }
+
+    apply plugin: 'java'
+    apply plugin: "io.spring.dependency-management"
+    apply plugin: 'maven'
+   	apply plugin: 'checkstyle'
+
+    targetCompatibility = vJavaLang
+    sourceCompatibility = vJavaLang
+
+    afterEvaluate {
+        dependencyManagement {
+            imports {
+                mavenBom('io.spring.platform:platform-bom:Cairo-SR5') {
+                    bomProperty 'guava.version', '25.1-jre'
+                }
+                mavenBom 'org.springframework.cloud:spring-cloud-openfeign:2.0.1.RELEASE'
+            }
+
+        }
+    }
+    
+	dependencies {   
+		compile('org.springframework.boot:spring-boot-configuration-processor')
+	    compile('org.springframework.boot:spring-boot-starter-web')
+			
+		compile ('io.springfox:springfox-swagger2:2.9.2')
+	    compile ('io.springfox:springfox-swagger-ui:2.9.2')
+	}
+    checkstyle {
+        ignoreFailures = false
+        sourceSets = [sourceSets.main]
+    }
+}
+
+configure(bootProjects) {
+    apply plugin: 'org.springframework.boot'
+    springBoot {
+        buildInfo()
+    }
+}
