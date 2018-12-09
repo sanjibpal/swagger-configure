@@ -1,10 +1,12 @@
 package com.pcl.core.swagger;
 
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,13 +58,13 @@ public class SwaggerAutoConfiguration {
 	}
 
 	private List<ResponseMessage> getResponseMessages() {
-		List<ResponseMessage> responseMessages = new ArrayList<ResponseMessage>();
-		responseMessages.add(new ResponseMessageBuilder().code(NOT_FOUND.value())
-				.message("Exception stack trace. Recorded in splunk").responseModel(null).build());
-		responseMessages.add(new ResponseMessageBuilder().code(FORBIDDEN.value())
-				.message("Exception stack trace. Recorded in splunk").responseModel(null).build());
-
-		return responseMessages;
+		return Stream.of(
+				new ResponseMessageBuilder().code(NOT_FOUND.value())
+				.message("Exception stack trace. Recorded in splunk").responseModel(null).build(),
+				new ResponseMessageBuilder().code(FORBIDDEN.value())
+				.message("Exception stack trace. Recorded in splunk").responseModel(null).build()
+				)
+		.collect(toList());
 	}
 
 	private Boolean isSwaggerEnabled() {
@@ -76,17 +78,15 @@ public class SwaggerAutoConfiguration {
 	}
 
 	protected List<Parameter> getSwaggerGlobalParameters() {
-		List<Parameter> parameters = new ArrayList<Parameter>();
-		for (com.pcl.core.swagger.SwaggerProperties.GlobalParameter parameter : properties.getGlobalParameters()) {
-			parameters.add(new ParameterBuilder().name(parameter.getName()).description(parameter.getDescription())
-					.modelRef(new ModelRef("string")).parameterType(parameter.getParameterType())
-					.defaultValue(parameter.getDefaultValue())
-					.allowableValues(parameter.getAllowedValues() != null
-							? new AllowableListValues(parameter.getAllowedValues(), "string")
-							: null)
-					.required(true).build());
-		}
-		return parameters;
+		return properties.getGlobalParameters().stream()
+				.map(parameter -> new ParameterBuilder().name(parameter.getName())
+						.description(parameter.getDescription()).modelRef(new ModelRef("string"))
+						.parameterType(parameter.getParameterType()).defaultValue(parameter.getDefaultValue())
+						.allowableValues(parameter.getAllowedValues() != null
+								? new AllowableListValues(parameter.getAllowedValues(), "string")
+								: null)
+						.required(true).build())
+				.collect(toList());
 	}
 
 	protected ApiInfo getSwaggerApiInfo() {
